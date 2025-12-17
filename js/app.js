@@ -4,23 +4,29 @@ import { calculatorsDb } from './data/db.js';
 import { fetchGoogleData } from './google-db.js';
 import * as UI from './ui.js';
 
-// ВАША ССЫЛКА НА СКРИПТ (ЗАМЕНИТЕ НА СВОЮ АКТУАЛЬНУЮ ИЗ ПУНКТА 1)
-const API_URL = "https://script.google.com/macros/s/AKfycbw3rkUuesoimr_6ZZwCYdNqFDk7fMQ8VCtJmT7T62oX67mxBslLwDCOl40CTZHrw6jc/exec";
+// === НАСТРОЙКИ СВЯЗИ ===
+// Вставьте сюда вашу НОВУЮ ссылку скрипта (после публикации New Version)
+const API_URL = "https://script.google.com/macros/s/AKfycbwfJpaH7A3l6Mj1OSwgySv1lZ1dTsFz08byIR4j4oFSopVWepwtE6WPtVdLdIS9qVcq/exec"; 
 const API_PASS = "pechatny"; 
 
 let globalData = null;
 
-// === 1. ФУНКЦИЯ ДОБАВЛЕНИЯ (ADD) ===
+// === 1. ДОБАВЛЕНИЕ (ADD) ===
 window.addDbItem = async (category, formIdPrefix) => {
-    // Собираем данные из формы
     const name = document.getElementById(`${formIdPrefix}Name`).value;
-    const cost = document.getElementById(`${formIdPrefix}Cost`).value;
+    let cost = document.getElementById(`${formIdPrefix}Cost`).value;
     const param = document.getElementById(`${formIdPrefix}Param`).value;
 
     if (!name || !cost) { UI.showToast("Заполните название и цену", "error"); return; }
 
-    UI.showToast("Добавление в Google...", "info");
-    const newItemId = (category === 'material' ? 'm' : (category === 'rate' ? 'r' : 'e')) + Date.now();
+    // ЛЕЧИМ ЗАПЯТЫЕ: 0,15 -> 0.15
+    cost = cost.replace(',', '.');
+
+    UI.showToast("Отправка в Google...", "info");
+    
+    // Генерируем уникальный ID (m_..., r_..., e_...)
+    const prefix = category === 'material' ? 'm' : (category === 'rate' ? 'r' : 'e');
+    const newItemId = prefix + Date.now();
 
     try {
         await fetch(API_URL, {
@@ -29,18 +35,18 @@ window.addDbItem = async (category, formIdPrefix) => {
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 password: API_PASS,
-                action: "add",        // <-- Команда добавления
+                action: "add",
                 calcId: state.currentCalcId,
                 category: category,
                 id: newItemId,
                 name: name,
-                cost: parseFloat(cost),
+                cost: cost,
                 param: param
             })
         });
 
-        UI.showToast("Добавлено! Таблица обновится.", "success");
-        // Очистка формы
+        UI.showToast("Добавлено! Проверьте таблицу.", "success");
+        // Очищаем поля
         document.getElementById(`${formIdPrefix}Name`).value = "";
         document.getElementById(`${formIdPrefix}Cost`).value = "";
 
@@ -50,11 +56,14 @@ window.addDbItem = async (category, formIdPrefix) => {
     }
 };
 
-// === 2. ФУНКЦИЯ СОХРАНЕНИЯ ЦЕНЫ (UPDATE) ===
+// === 2. ОБНОВЛЕНИЕ ЦЕНЫ (UPDATE) ===
 window.updatePrice = async (calcId, itemId, newCost) => {
     const btn = document.querySelector(`button[data-save-id="${itemId}"]`);
     if(btn) btn.innerText = '...';
     
+    // ЛЕЧИМ ЗАПЯТЫЕ
+    let safeCost = String(newCost).replace(',', '.');
+
     UI.showToast("Сохранение...", "info");
 
     try {
@@ -62,36 +71,46 @@ window.updatePrice = async (calcId, itemId, newCost) => {
             method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 password: API_PASS,
-                action: "update", // По умолчанию
+                action: "update",
                 calcId: calcId,
                 id: itemId,
-                newCost: parseFloat(newCost)
+                newCost: safeCost
             })
         });
         UI.showToast("Сохранено!", "success");
-        if(btn) btn.innerText = 'СОХРАНИТЬ';
-    } catch (e) { UI.showToast("Ошибка", "error"); if(btn) btn.innerText = 'ОШИБКА'; }
+        if(btn) btn.innerText = 'OK';
+        setTimeout(() => { if(btn) btn.innerText = 'СОХРАНИТЬ'; }, 2000);
+    } catch (e) { 
+        UI.showToast("Ошибка", "error"); 
+        if(btn) btn.innerText = 'ERR'; 
+    }
 };
 
-// === 3. ФУНКЦИЯ УДАЛЕНИЯ (DELETE) ===
+// === 3. УДАЛЕНИЕ (DELETE) ===
 window.deleteDbItem = async (calcId, itemId) => {
-    UI.showConfirm("Удалить навсегда?", async () => {
+    UI.showConfirm("Удалить из базы навсегда?", async () => {
         UI.showToast("Удаление...", "info");
         try {
             await fetch(API_URL, {
                 method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ password: API_PASS, action: "delete", calcId: calcId, id: itemId })
+                body: JSON.stringify({ 
+                    password: API_PASS, 
+                    action: "delete", 
+                    calcId: calcId, 
+                    id: itemId 
+                })
             });
             
-            UI.showToast("Удалено!", "success");
+            UI.showToast("Команда отправлена", "success");
+            // Визуально скрываем строку, чтобы не ждать обновления гугла
             const row = document.getElementById(`row_${itemId}`);
-            if(row) row.remove();
+            if(row) row.style.opacity = '0.3';
+            
         } catch (e) { UI.showToast("Ошибка", "error"); }
     });
 };
 
-// ... Стандартные функции калькулятора (addPart, calculate и т.д.) ...
-// (Оставьте их как были, они не менялись, для краткости я их свернул, но они должны быть здесь)
+// === СТАНДАРТНЫЕ ФУНКЦИИ КАЛЬКУЛЯТОРА ===
 window.addPart = () => { const matId = document.getElementById('newPartMaterial').value; const w = parseFloat(document.getElementById('newPartW').value)||0; const h = parseFloat(document.getElementById('newPartH').value)||0; const qty = parseFloat(document.getElementById('newPartQty').value)||1; if(w<=0||h<=0){UI.showToast("Размеры!","error");return;} const perimM=((w+h)*2*qty)/100; state.parts.push({id:Date.now(),matId,w,h,qty,cutLen:perimM.toFixed(2)}); UI.renderPartsTable(); window.calculate(); UI.showToast("Добавлено","success"); };
 window.removePart = (id) => { state.parts=state.parts.filter(p=>p.id!==id); UI.renderPartsTable(); window.calculate(); };
 window.clearParts = () => { if(state.parts.length>0) UI.showConfirm("Очистить?",()=>{state.parts=[];UI.renderPartsTable();window.calculate();}); };
@@ -132,6 +151,3 @@ async function init() {
     window.loadProfile(lastId);
 }
 document.addEventListener('DOMContentLoaded', init);
-
-
-
