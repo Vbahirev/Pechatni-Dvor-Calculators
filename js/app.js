@@ -6,7 +6,7 @@ import * as UI from './ui.js';
 
 // ВАША ССЫЛКА НА СКРИПТ (ЗАМЕНИТЕ НА СВОЮ АКТУАЛЬНУЮ ИЗ ПУНКТА 1)
 const API_URL = "https://script.google.com/macros/s/AKfycbz-n27Q2Vb40G93tNUgh3d0fwnRCGyVlHnyu6YHyyTZpVZfKcvI_q5s50ksLRs3oHE/exec";
-const API_PASS = "MY_SECRET_PASS_123"; 
+const API_PASS = "pechatni"; 
 
 let globalData = null;
 
@@ -132,3 +132,4 @@ async function init() {
     window.loadProfile(lastId);
 }
 document.addEventListener('DOMContentLoaded', init);
+
