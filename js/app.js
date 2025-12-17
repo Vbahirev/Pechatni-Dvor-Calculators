@@ -5,8 +5,8 @@ import { fetchGoogleData } from './google-db.js';
 import * as UI from './ui.js';
 
 // ВАША ССЫЛКА НА СКРИПТ (ЗАМЕНИТЕ НА СВОЮ АКТУАЛЬНУЮ ИЗ ПУНКТА 1)
-const API_URL = "https://script.google.com/macros/s/AKfycbz-n27Q2Vb40G93tNUgh3d0fwnRCGyVlHnyu6YHyyTZpVZfKcvI_q5s50ksLRs3oHE/exec";
-const API_PASS = "pechatni"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbyGdJvHB96BYsH2Fd2-0mOia-KnJAk8OnyME-ie4weGsP1tKFBxD1fpL-Hmcf9fzKPp/exec";
+const API_PASS = "pechatny"; 
 
 let globalData = null;
 
@@ -132,4 +132,5 @@ async function init() {
     window.loadProfile(lastId);
 }
 document.addEventListener('DOMContentLoaded', init);
+
 
