@@ -4,8 +4,7 @@ import { calculatorsDb } from './data/db.js';
 import { fetchGoogleData } from './google-db.js';
 import * as UI from './ui.js';
 
-// === НАСТРОЙКИ СВЯЗИ ===
-// Вставьте сюда вашу НОВУЮ ссылку скрипта (после публикации New Version)
+// ВСТАВЬТЕ ВАШУ ССЫЛКУ СЮДА
 const API_URL = "https://script.google.com/macros/s/AKfycbwfJpaH7A3l6Mj1OSwgySv1lZ1dTsFz08byIR4j4oFSopVWepwtE6WPtVdLdIS9qVcq/exec"; 
 const API_PASS = "pechatny"; 
 
@@ -14,20 +13,44 @@ let globalData = null;
 // === 1. ДОБАВЛЕНИЕ (ADD) ===
 window.addDbItem = async (category, formIdPrefix) => {
     const name = document.getElementById(`${formIdPrefix}Name`).value;
-    let cost = document.getElementById(`${formIdPrefix}Cost`).value;
+    let costStr = document.getElementById(`${formIdPrefix}Cost`).value;
     const param = document.getElementById(`${formIdPrefix}Param`).value;
 
-    if (!name || !cost) { UI.showToast("Заполните название и цену", "error"); return; }
+    if (!name || !costStr) { UI.showToast("Заполните поля", "error"); return; }
 
-    // ЛЕЧИМ ЗАПЯТЫЕ: 0,15 -> 0.15
-    cost = cost.replace(',', '.');
+    // Превращаем "0,15" в "0.15" для кода
+    let cost = parseFloat(costStr.replace(',', '.'));
+    if (isNaN(cost)) cost = 0;
 
-    UI.showToast("Отправка в Google...", "info");
+    UI.showToast("Добавляем...", "info");
     
-    // Генерируем уникальный ID (m_..., r_..., e_...)
     const prefix = category === 'material' ? 'm' : (category === 'rate' ? 'r' : 'e');
     const newItemId = prefix + Date.now();
 
+    // 1. МГНОВЕННО ОБНОВЛЯЕМ НА САЙТЕ (чтобы вы увидели результат)
+    const newItem = { id: newItemId, name: name, cost: cost, group: param, type: param }; // group для мат, type для услуг
+    
+    if (category === 'material') {
+        newItem.group = param; // Важно для материалов
+        state.materialList.push(newItem);
+        UI.renderMaterialsSelect();
+    } else if (category === 'rate') {
+        newItem.type = param;
+        state.processingRates.push(newItem);
+        UI.renderProcessingSection();
+    } else {
+        newItem.type = param;
+        state.extrasCatalogue.push(newItem);
+        UI.renderExtrasSection();
+    }
+    
+    // Перерисовываем список настроек, чтобы вы увидели новую строку
+    UI.renderSettingsLists();
+    // Очищаем поля ввода
+    document.getElementById(`${formIdPrefix}Name`).value = "";
+    document.getElementById(`${formIdPrefix}Cost`).value = "";
+
+    // 2. ОТПРАВЛЯЕМ В ГУГЛ (Фоном)
     try {
         await fetch(API_URL, {
             method: "POST", 
@@ -40,32 +63,38 @@ window.addDbItem = async (category, formIdPrefix) => {
                 category: category,
                 id: newItemId,
                 name: name,
-                cost: cost,
+                cost: cost, // Отправляем число
                 param: param
             })
         });
-
-        UI.showToast("Добавлено! Проверьте таблицу.", "success");
-        // Очищаем поля
-        document.getElementById(`${formIdPrefix}Name`).value = "";
-        document.getElementById(`${formIdPrefix}Cost`).value = "";
-
+        UI.showToast("Сохранено в облако", "success");
     } catch (error) {
         console.error(error);
-        UI.showToast("Ошибка соединения", "error");
+        UI.showToast("Ошибка сети, но локально добавлено", "warning");
     }
 };
 
 // === 2. ОБНОВЛЕНИЕ ЦЕНЫ (UPDATE) ===
-window.updatePrice = async (calcId, itemId, newCost) => {
+window.updatePrice = async (calcId, itemId, newCostStr) => {
     const btn = document.querySelector(`button[data-save-id="${itemId}"]`);
-    if(btn) btn.innerText = '...';
+    if(btn) btn.innerHTML = '<i class="fas fa-sync fa-spin"></i>';
     
-    // ЛЕЧИМ ЗАПЯТЫЕ
-    let safeCost = String(newCost).replace(',', '.');
+    // Лечим запятую
+    let safeCost = parseFloat(String(newCostStr).replace(',', '.'));
+    if (isNaN(safeCost)) safeCost = 0;
 
-    UI.showToast("Сохранение...", "info");
+    // 1. МГНОВЕННО ОБНОВЛЯЕМ В ПАМЯТИ
+    let item = state.materialList.find(i => i.id === itemId) || 
+               state.processingRates.find(i => i.id === itemId) || 
+               state.extrasCatalogue.find(i => i.id === itemId);
+    
+    if (item) {
+        item.cost = safeCost;
+        window.calculate(); // Пересчитываем цены в калькуляторе
+        UI.showToast("Цена применена!", "success");
+    }
 
+    // 2. ОТПРАВЛЯЕМ В ГУГЛ
     try {
         await fetch(API_URL, {
             method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -77,19 +106,36 @@ window.updatePrice = async (calcId, itemId, newCost) => {
                 newCost: safeCost
             })
         });
-        UI.showToast("Сохранено!", "success");
-        if(btn) btn.innerText = 'OK';
-        setTimeout(() => { if(btn) btn.innerText = 'СОХРАНИТЬ'; }, 2000);
+        
+        if(btn) btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { if(btn) btn.innerHTML = 'СОХРАНИТЬ'; }, 1500);
+        
     } catch (e) { 
-        UI.showToast("Ошибка", "error"); 
+        UI.showToast("Ошибка сети", "error"); 
         if(btn) btn.innerText = 'ERR'; 
     }
 };
 
 // === 3. УДАЛЕНИЕ (DELETE) ===
 window.deleteDbItem = async (calcId, itemId) => {
-    UI.showConfirm("Удалить из базы навсегда?", async () => {
-        UI.showToast("Удаление...", "info");
+    UI.showConfirm("Удалить навсегда?", async () => {
+        
+        // 1. МГНОВЕННО УДАЛЯЕМ С ЭКРАНА
+        const row = document.getElementById(`row_${itemId}`);
+        if(row) row.remove();
+
+        // Удаляем из памяти
+        state.materialList = state.materialList.filter(x => x.id !== itemId);
+        state.processingRates = state.processingRates.filter(x => x.id !== itemId);
+        state.extrasCatalogue = state.extrasCatalogue.filter(x => x.id !== itemId);
+        
+        // Обновляем списки в калькуляторе
+        UI.renderMaterialsSelect();
+        UI.renderProcessingSection();
+        UI.renderExtrasSection();
+        window.calculate();
+
+        // 2. ОТПРАВЛЯЕМ В ГУГЛ
         try {
             await fetch(API_URL, {
                 method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -100,17 +146,12 @@ window.deleteDbItem = async (calcId, itemId) => {
                     id: itemId 
                 })
             });
-            
-            UI.showToast("Команда отправлена", "success");
-            // Визуально скрываем строку, чтобы не ждать обновления гугла
-            const row = document.getElementById(`row_${itemId}`);
-            if(row) row.style.opacity = '0.3';
-            
-        } catch (e) { UI.showToast("Ошибка", "error"); }
+            UI.showToast("Удалено из облака", "success");
+        } catch (e) { UI.showToast("Ошибка сети", "error"); }
     });
 };
 
-// === СТАНДАРТНЫЕ ФУНКЦИИ КАЛЬКУЛЯТОРА ===
+// === СТАНДАРТНЫЕ ФУНКЦИИ (Без изменений) ===
 window.addPart = () => { const matId = document.getElementById('newPartMaterial').value; const w = parseFloat(document.getElementById('newPartW').value)||0; const h = parseFloat(document.getElementById('newPartH').value)||0; const qty = parseFloat(document.getElementById('newPartQty').value)||1; if(w<=0||h<=0){UI.showToast("Размеры!","error");return;} const perimM=((w+h)*2*qty)/100; state.parts.push({id:Date.now(),matId,w,h,qty,cutLen:perimM.toFixed(2)}); UI.renderPartsTable(); window.calculate(); UI.showToast("Добавлено","success"); };
 window.removePart = (id) => { state.parts=state.parts.filter(p=>p.id!==id); UI.renderPartsTable(); window.calculate(); };
 window.clearParts = () => { if(state.parts.length>0) UI.showConfirm("Очистить?",()=>{state.parts=[];UI.renderPartsTable();window.calculate();}); };
@@ -136,7 +177,7 @@ window.loadProfile = (id) => {
 };
 
 async function init() {
-    UI.showToast("Синхронизация...", "info");
+    UI.showToast("Проверка цен...", "info");
     const freshData = await fetchGoogleData();
     if (freshData) {
         globalData = freshData;
@@ -144,8 +185,8 @@ async function init() {
         UI.showToast("Цены обновлены", "success");
     } else {
         const cached = localStorage.getItem('pd_cached_prices');
-        if(cached) { globalData = JSON.parse(cached); UI.showToast("Оффлайн (кэш)", "info"); }
-        else UI.showToast("Оффлайн (база)", "error");
+        if(cached) { globalData = JSON.parse(cached); UI.showToast("Работаем из кэша", "info"); }
+        else UI.showToast("Нет сети", "error");
     }
     const lastId = localStorage.getItem('pd_active_calc_id') || calculatorsDb[0].id;
     window.loadProfile(lastId);
