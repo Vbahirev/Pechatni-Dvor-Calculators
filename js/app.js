@@ -4,154 +4,121 @@ import { calculatorsDb } from './data/db.js';
 import { fetchGoogleData } from './google-db.js';
 import * as UI from './ui.js';
 
-// ВСТАВЬТЕ ВАШУ ССЫЛКУ СЮДА
-const API_URL = "https://script.google.com/macros/s/AKfycbwfJpaH7A3l6Mj1OSwgySv1lZ1dTsFz08byIR4j4oFSopVWepwtE6WPtVdLdIS9qVcq/exec"; 
-const API_PASS = "pechatny"; 
+// ВСТАВЬТЕ ССЫЛКУ ИЗ GOOGLE APPS SCRIPT
+const API_URL = "https://script.google.com/macros/s/AKfycbz1NR9tNgX5CHL0OiQpMdhAwch511wA1CrNKWmAgVlaftti5uKjkmJWVoqh3wVvTgBj/exec"; 
+const API_PASS = "MY_SECRET_PASS_123"; 
 
 let globalData = null;
 
-// === 1. ДОБАВЛЕНИЕ (ADD) ===
+// === 1. ДОБАВЛЕНИЕ ===
 window.addDbItem = async (category, formIdPrefix) => {
     const name = document.getElementById(`${formIdPrefix}Name`).value;
-    let costStr = document.getElementById(`${formIdPrefix}Cost`).value;
+    const costStr = document.getElementById(`${formIdPrefix}Cost`).value;
     const param = document.getElementById(`${formIdPrefix}Param`).value;
 
     if (!name || !costStr) { UI.showToast("Заполните поля", "error"); return; }
-
-    // Превращаем "0,15" в "0.15" для кода
+    
+    // Чиним цену
     let cost = parseFloat(costStr.replace(',', '.'));
     if (isNaN(cost)) cost = 0;
 
     UI.showToast("Добавляем...", "info");
     
+    // Создаем ID
     const prefix = category === 'material' ? 'm' : (category === 'rate' ? 'r' : 'e');
     const newItemId = prefix + Date.now();
 
-    // 1. МГНОВЕННО ОБНОВЛЯЕМ НА САЙТЕ (чтобы вы увидели результат)
-    const newItem = { id: newItemId, name: name, cost: cost, group: param, type: param }; // group для мат, type для услуг
-    
+    // 1. МГНОВЕННО ОБНОВЛЯЕМ НА САЙТЕ
+    // Важно: здесь переводим русские параметры в системные (plywood, linear), чтобы сайт мог считать прямо сейчас
+    const sysParamMap = { 'Дерево':'plywood', 'Пластик':'acrylic', 'Металл':'metal', 'Другое':'other', 'метр':'linear', 'м2':'area', 'шт':'qty', 'фикс':'fixed' };
+    const sysParam = sysParamMap[param] || 'other';
+
+    const newItem = { id: newItemId, name: name, cost: cost };
+
     if (category === 'material') {
-        newItem.group = param; // Важно для материалов
+        newItem.group = sysParam; 
         state.materialList.push(newItem);
         UI.renderMaterialsSelect();
     } else if (category === 'rate') {
-        newItem.type = param;
+        newItem.type = sysParam;
         state.processingRates.push(newItem);
         UI.renderProcessingSection();
     } else {
-        newItem.type = param;
+        newItem.type = sysParam;
         state.extrasCatalogue.push(newItem);
         UI.renderExtrasSection();
     }
     
-    // Перерисовываем список настроек, чтобы вы увидели новую строку
     UI.renderSettingsLists();
-    // Очищаем поля ввода
     document.getElementById(`${formIdPrefix}Name`).value = "";
     document.getElementById(`${formIdPrefix}Cost`).value = "";
 
-    // 2. ОТПРАВЛЯЕМ В ГУГЛ (Фоном)
-    try {
-        await fetch(API_URL, {
-            method: "POST", 
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-                password: API_PASS,
-                action: "add",
-                calcId: state.currentCalcId,
-                category: category,
-                id: newItemId,
-                name: name,
-                cost: cost, // Отправляем число
-                param: param
-            })
-        });
-        UI.showToast("Сохранено в облако", "success");
-    } catch (error) {
-        console.error(error);
-        UI.showToast("Ошибка сети, но локально добавлено", "warning");
-    }
-};
+    // 2. ОТПРАВЛЯЕМ В ГУГЛ (Русский текст)
+    const calcNameMap = { 'calc_laser_main': 'Лазер', 'calc_uv_print': 'УФ Печать' };
+    const typeNameMap = { 'material': 'Материал', 'rate': 'Тариф', 'extra': 'Доп' };
 
-// === 2. ОБНОВЛЕНИЕ ЦЕНЫ (UPDATE) ===
-window.updatePrice = async (calcId, itemId, newCostStr) => {
-    const btn = document.querySelector(`button[data-save-id="${itemId}"]`);
-    if(btn) btn.innerHTML = '<i class="fas fa-sync fa-spin"></i>';
-    
-    // Лечим запятую
-    let safeCost = parseFloat(String(newCostStr).replace(',', '.'));
-    if (isNaN(safeCost)) safeCost = 0;
-
-    // 1. МГНОВЕННО ОБНОВЛЯЕМ В ПАМЯТИ
-    let item = state.materialList.find(i => i.id === itemId) || 
-               state.processingRates.find(i => i.id === itemId) || 
-               state.extrasCatalogue.find(i => i.id === itemId);
-    
-    if (item) {
-        item.cost = safeCost;
-        window.calculate(); // Пересчитываем цены в калькуляторе
-        UI.showToast("Цена применена!", "success");
-    }
-
-    // 2. ОТПРАВЛЯЕМ В ГУГЛ
     try {
         await fetch(API_URL, {
             method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 password: API_PASS,
-                action: "update",
-                calcId: calcId,
-                id: itemId,
-                newCost: safeCost
+                action: "add",
+                calcName: calcNameMap[state.currentCalcId] || 'Лазер', // "Лазер"
+                type: typeNameMap[category],                           // "Материал"
+                id: newItemId,
+                name: name,
+                cost: cost,
+                param: param                                           // "Дерево"
             })
         });
-        
-        if(btn) btn.innerHTML = '<i class="fas fa-check"></i>';
-        setTimeout(() => { if(btn) btn.innerHTML = 'СОХРАНИТЬ'; }, 1500);
-        
-    } catch (e) { 
-        UI.showToast("Ошибка сети", "error"); 
-        if(btn) btn.innerText = 'ERR'; 
-    }
+        UI.showToast("Сохранено", "success");
+    } catch (error) { console.error(error); UI.showToast("Ошибка сети", "warning"); }
 };
 
-// === 3. УДАЛЕНИЕ (DELETE) ===
+// === 2. ОБНОВЛЕНИЕ ЦЕНЫ ===
+window.updatePrice = async (calcId, itemId, newCostStr) => {
+    const btn = document.querySelector(`button[data-save-id="${itemId}"]`);
+    if(btn) btn.innerHTML = '<i class="fas fa-sync fa-spin"></i>';
+    
+    let safeCost = parseFloat(String(newCostStr).replace(',', '.'));
+    if (isNaN(safeCost)) safeCost = 0;
+
+    // Мгновенно обновляем память
+    let item = state.materialList.find(i => i.id === itemId) || state.processingRates.find(i => i.id === itemId) || state.extrasCatalogue.find(i => i.id === itemId);
+    if (item) { item.cost = safeCost; window.calculate(); UI.showToast("Цена применена!", "success"); }
+
+    try {
+        await fetch(API_URL, {
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ password: API_PASS, action: "update", id: itemId, newCost: safeCost })
+        });
+        if(btn) btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { if(btn) btn.innerHTML = 'СОХРАНИТЬ'; }, 1500);
+    } catch (e) { UI.showToast("Ошибка сети", "error"); }
+};
+
+// === 3. УДАЛЕНИЕ ===
 window.deleteDbItem = async (calcId, itemId) => {
     UI.showConfirm("Удалить навсегда?", async () => {
-        
-        // 1. МГНОВЕННО УДАЛЯЕМ С ЭКРАНА
+        // Удаляем с экрана
         const row = document.getElementById(`row_${itemId}`);
         if(row) row.remove();
-
-        // Удаляем из памяти
         state.materialList = state.materialList.filter(x => x.id !== itemId);
         state.processingRates = state.processingRates.filter(x => x.id !== itemId);
         state.extrasCatalogue = state.extrasCatalogue.filter(x => x.id !== itemId);
-        
-        // Обновляем списки в калькуляторе
-        UI.renderMaterialsSelect();
-        UI.renderProcessingSection();
-        UI.renderExtrasSection();
-        window.calculate();
+        UI.renderMaterialsSelect(); UI.renderProcessingSection(); UI.renderExtrasSection(); window.calculate();
 
-        // 2. ОТПРАВЛЯЕМ В ГУГЛ
         try {
             await fetch(API_URL, {
                 method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ 
-                    password: API_PASS, 
-                    action: "delete", 
-                    calcId: calcId, 
-                    id: itemId 
-                })
+                body: JSON.stringify({ password: API_PASS, action: "delete", id: itemId })
             });
-            UI.showToast("Удалено из облака", "success");
+            UI.showToast("Удалено", "success");
         } catch (e) { UI.showToast("Ошибка сети", "error"); }
     });
 };
 
-// === СТАНДАРТНЫЕ ФУНКЦИИ (Без изменений) ===
+// ... Стандартные функции UI (без изменений) ...
 window.addPart = () => { const matId = document.getElementById('newPartMaterial').value; const w = parseFloat(document.getElementById('newPartW').value)||0; const h = parseFloat(document.getElementById('newPartH').value)||0; const qty = parseFloat(document.getElementById('newPartQty').value)||1; if(w<=0||h<=0){UI.showToast("Размеры!","error");return;} const perimM=((w+h)*2*qty)/100; state.parts.push({id:Date.now(),matId,w,h,qty,cutLen:perimM.toFixed(2)}); UI.renderPartsTable(); window.calculate(); UI.showToast("Добавлено","success"); };
 window.removePart = (id) => { state.parts=state.parts.filter(p=>p.id!==id); UI.renderPartsTable(); window.calculate(); };
 window.clearParts = () => { if(state.parts.length>0) UI.showConfirm("Очистить?",()=>{state.parts=[];UI.renderPartsTable();window.calculate();}); };
@@ -177,7 +144,7 @@ window.loadProfile = (id) => {
 };
 
 async function init() {
-    UI.showToast("Проверка цен...", "info");
+    UI.showToast("Синхронизация...", "info");
     const freshData = await fetchGoogleData();
     if (freshData) {
         globalData = freshData;
@@ -185,8 +152,7 @@ async function init() {
         UI.showToast("Цены обновлены", "success");
     } else {
         const cached = localStorage.getItem('pd_cached_prices');
-        if(cached) { globalData = JSON.parse(cached); UI.showToast("Работаем из кэша", "info"); }
-        else UI.showToast("Нет сети", "error");
+        if(cached) { globalData = JSON.parse(cached); UI.showToast("Кэш", "info"); }
     }
     const lastId = localStorage.getItem('pd_active_calc_id') || calculatorsDb[0].id;
     window.loadProfile(lastId);
