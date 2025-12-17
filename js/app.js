@@ -4,10 +4,45 @@ import { calculatorsDb } from './data/db.js';
 import { fetchGoogleData } from './google-db.js';
 import * as UI from './ui.js';
 
-// Глобальное хранилище данных
+// ВАША ССЫЛКА НА СКРИПТ (API)
+const API_URL = "https://script.google.com/macros/s/AKfycbwuApm8tOAIcmUsLQe4iLoU_3_IFjzdaI0D5T2HdykAlHkglI1sjRjEaETCR9ire_Py/exec";
+const API_PASS = "MY_SECRET_PASS_123"; // Пароль должен совпадать с тем, что в Google Script!
+
 let globalData = null;
 
-// === Глобальные функции ===
+// === Функция отправки цены в Google ===
+window.updatePrice = async (calcId, itemId, newCost) => {
+    // Визуальное уведомление
+    const btn = document.querySelector(`button[onclick*="'${itemId}'"]`);
+    if(btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    UI.showToast("Сохранение в Google...", "info");
+
+    try {
+        await fetch(API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+                password: API_PASS,
+                calcId: calcId,
+                id: itemId,
+                newCost: parseFloat(newCost)
+            })
+        });
+
+        UI.showToast("Отправлено! Таблица обновится через минуту.", "success");
+        if(btn) btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { if(btn) btn.innerHTML = '<i class="fas fa-save"></i>'; }, 2000);
+
+    } catch (error) {
+        console.error(error);
+        UI.showToast("Ошибка соединения", "error");
+        if(btn) btn.innerHTML = '<i class="fas fa-times"></i>';
+    }
+};
+
+// === Остальные глобальные функции ===
 window.addPart = () => {
     const matId = document.getElementById('newPartMaterial').value;
     const w = parseFloat(document.getElementById('newPartW').value) || 0;
@@ -109,17 +144,12 @@ window.openCatalog = () => {
 };
 window.closeCatalog = () => document.getElementById('catalogModal').classList.add('hidden');
 
-// === УМНАЯ ЗАГРУЗКА ПРОФИЛЯ ===
 window.loadProfile = (id) => {
-    // 1. Грузим базовый профиль (из db.js)
     const name = state.loadProfile(id);
-    
-    // 2. Если есть скачанные данные (или кэш), накладываем их сверху
     if(globalData) {
         state.injectExternalData(globalData);
     }
     
-    // 3. Рендер
     document.getElementById('currentCalcName').innerText = name;
     document.getElementById('settingsCalcName').innerText = name;
     
@@ -139,33 +169,26 @@ window.closeConfirm = UI.closeConfirm;
 window.resetOrder = UI.resetOrder;
 window.saveData = () => {}; 
 
-// === ГЛАВНАЯ ИНИЦИАЛИЗАЦИЯ ===
+// === ИНИЦИАЛИЗАЦИЯ ===
 async function init() {
-    UI.showToast("Проверка цен...", "info");
+    UI.showToast("Синхронизация цен...", "info");
     
-    // 1. Пробуем скачать свежие цены
     const freshData = await fetchGoogleData();
 
     if (freshData) {
-        // УСПЕХ: Интернет есть
         globalData = freshData;
-        // Сохраняем "на черный день" в память браузера
         localStorage.setItem('pd_cached_prices', JSON.stringify(freshData));
-        UI.showToast("Цены обновлены (Google)", "success");
+        UI.showToast("Цены обновлены", "success");
     } else {
-        // ОШИБКА: Интернета нет
         const cached = localStorage.getItem('pd_cached_prices');
         if (cached) {
-            // Берем из памяти браузера (то, что скачали в прошлый раз)
             globalData = JSON.parse(cached);
-            UI.showToast("Нет сети. Цены из памяти", "info");
+            UI.showToast("Оффлайн режим (кэш)", "info");
         } else {
-            // В памяти пусто -> используем db.js
-            UI.showToast("Нет сети. Заводские настройки", "error");
+            UI.showToast("Оффлайн режим (база)", "error");
         }
     }
 
-    // 2. Запускаем калькулятор
     const lastId = localStorage.getItem('pd_active_calc_id') || calculatorsDb[0].id;
     window.loadProfile(lastId);
 }
