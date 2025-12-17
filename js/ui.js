@@ -23,7 +23,6 @@ export function showConfirm(message, callback) {
     modal.classList.remove('hidden');
     setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
     
-    // Привязываем кнопку "Да" (удаляем старые листенеры)
     const btn = document.getElementById('confirmBtnYes');
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
@@ -44,7 +43,6 @@ export function closeConfirm(result) {
 export function renderMaterialsSelect() {
     const s = document.getElementById('newPartMaterial'); s.innerHTML = '';
     const groups = {}; 
-    // Группируем
     state.materialList.forEach(m => {
         const gName = m.group === 'plywood' ? 'ДЕРЕВО' : (m.group === 'acrylic' ? 'ПЛАСТИК' : 'ДРУГОЕ');
         if(!groups[gName]) groups[gName] = [];
@@ -64,7 +62,6 @@ export function renderPartsTable() {
     const tbody = document.getElementById('partsTableBody'); tbody.innerHTML = '';
     state.parts.forEach(p => {
         const m = state.materialList.find(x => x.id === p.matId) || {name:'?', group:'plywood'};
-        
         let cutRateObj = state.processingRates.find(r => r.id === (m.group === 'plywood' ? 'cut_plywood' : 'cut_acrylic'));
         if(!cutRateObj) cutRateObj = state.processingRates.find(r => r.type === 'linear');
         
@@ -141,17 +138,24 @@ export function renderExtrasSection() {
     }).join('');
 }
 
+// === ОБНОВЛЕННЫЙ РЕНДЕР СПИСКОВ (С кнопками сохранения) ===
 export function renderSettingsLists() {
-    const makeList = (arr, unit) => arr.map(i => 
-        `<div class="flex justify-between items-center p-2 border-b border-slate-50 text-xs">
-            <span class="font-medium text-slate-700 w-2/3 truncate">${i.name}</span>
-            <span class="font-bold text-slate-900">${i.cost} ${unit}</span>
-        </div>`
-    ).join('');
+    const makeRow = (i, unit) => `
+        <div class="flex justify-between items-center p-2 border-b border-slate-50 text-xs">
+            <span class="font-medium text-slate-700 w-2/3 truncate" title="${i.name}">${i.name}</span>
+            <div class="flex items-center gap-2">
+                <input type="number" value="${i.cost}" id="cost_${i.id}" class="w-16 border border-slate-300 rounded p-1 text-sm text-right focus:border-orange-500 outline-none">
+                <span class="text-[10px] text-slate-400 w-3">${unit}</span>
+                <button onclick="updatePrice('${state.currentCalcId}', '${i.id}', document.getElementById('cost_${i.id}').value)" class="bg-slate-100 hover:bg-green-500 hover:text-white text-slate-500 px-2 py-1 rounded transition h-7 w-7 flex items-center justify-center">
+                    <i class="fas fa-save"></i>
+                </button>
+            </div>
+        </div>
+    `;
 
-    document.getElementById('dbMaterialsList').innerHTML = makeList(state.materialList, '₽');
-    document.getElementById('dbRatesList').innerHTML = makeList(state.processingRates, '₽');
-    document.getElementById('dbExtrasList').innerHTML = makeList(state.extrasCatalogue, '₽');
+    document.getElementById('dbMaterialsList').innerHTML = state.materialList.map(i => makeRow(i, '₽')).join('');
+    document.getElementById('dbRatesList').innerHTML = state.processingRates.map(i => makeRow(i, '₽')).join('');
+    document.getElementById('dbExtrasList').innerHTML = state.extrasCatalogue.map(i => makeRow(i, '₽')).join('');
 }
 
 export function printReceipt() {
