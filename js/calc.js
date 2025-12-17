@@ -1,0 +1,1 @@
+function calculate(){document.getElementById('totalPrice')?.innerText='OK'}

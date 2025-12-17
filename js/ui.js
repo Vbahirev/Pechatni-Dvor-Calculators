@@ -1,0 +1,1 @@
+function toast(t){alert(t)}
