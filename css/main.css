@@ -153,6 +153,74 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin
 @media (max-width: 768px) {
     .desktop-only { display: none !important; }
     .mobile-only { display: block; }
+
+    body { padding: 0; }
+    #mobileAppRoot { position: relative; min-height: 100vh; }
+    .mobile-screens-track { overflow: hidden; }
+    .mobile-screen { padding: 16px; padding-bottom: 130px; box-sizing: border-box; background: #f8fafc; }
+
+    .mobile-total-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 88px;
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        box-sizing: border-box;
+        z-index: 40;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+        gap: 12px;
+    }
+
+    .mobile-total-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .mobile-total-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #475569;
+    }
+
+    .mobile-total-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .mobile-total-actions {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    .mobile-total-btn {
+        flex: 1;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 13px;
+        border-radius: 10px;
+        padding: 12px 10px;
+        text-align: center;
+    }
+
+    .mobile-total-btn.primary {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
+    }
 }
 
 .mobile-screens-track {
@@ -165,6 +233,10 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin
     min-width: 100vw;
     height: 100vh;
     overflow-y: auto;
+}
+
+.mobile-total-bar {
+    display: none;
 }
 
 /* Print */
