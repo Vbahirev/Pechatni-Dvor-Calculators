@@ -122,7 +122,7 @@ window.deleteDbItem = async (calcId, itemId) => {
 window.addPart = () => { const matId = document.getElementById('newPartMaterial').value; const w = parseFloat(document.getElementById('newPartW').value)||0; const h = parseFloat(document.getElementById('newPartH').value)||0; const qty = parseFloat(document.getElementById('newPartQty').value)||1; if(w<=0||h<=0){UI.showToast("Размеры!","error");return;} const perimM=((w+h)*2*qty)/100; state.parts.push({id:Date.now(),matId,w,h,qty,cutLen:perimM.toFixed(2)}); UI.renderPartsTable(); window.calculate(); UI.showToast("Добавлено","success"); };
 window.removePart = (id) => { state.parts=state.parts.filter(p=>p.id!==id); UI.renderPartsTable(); window.calculate(); };
 window.clearParts = () => { if(state.parts.length>0) UI.showConfirm("Очистить?",()=>{state.parts=[];UI.renderPartsTable();window.calculate();}); };
-window.calculate = () => { const res=calculateTotals(); const fmt=(n)=>Math.round(n).toLocaleString('ru-RU')+' ₽'; document.getElementById('resMat').innerText=fmt(res.totalMat); document.getElementById('resCut').innerText=fmt(res.totalCut); document.getElementById('resFinish').innerText=fmt(res.totalFinish); document.getElementById('resExtras').innerText=fmt(res.totalExtras); document.getElementById('costPrice').innerText=Math.round(res.costPrice); document.getElementById('totalPrice').innerText=fmt(res.salePrice); };
+window.calculate = () => { const res=calculateTotals(); const fmt=(n)=>Math.round(n).toLocaleString('ru-RU')+' ₽'; document.getElementById('resMat').innerText=fmt(res.totalMat); document.getElementById('resCut').innerText=fmt(res.totalCut); document.getElementById('resFinish').innerText=fmt(res.totalFinish); document.getElementById('resExtras').innerText=fmt(res.totalExtras); document.getElementById('costPrice').innerText=Math.round(res.costPrice); document.getElementById('totalPrice').innerText=fmt(res.salePrice); const mobileTotal=document.getElementById('mobileTotalPrice'); if(mobileTotal) mobileTotal.innerText=fmt(res.salePrice); };
 window.stepInput = (id,s) => { const el=document.getElementById(id); let v=parseFloat(el.value)||0; if(v+s>=(id.includes('Qty')?1:0)) el.value=v+s; };
 window.stepPartCut = (id,s) => { const p=state.parts.find(x=>x.id===id); if(p){let v=parseFloat(p.cutLen)+s; if(v<0)v=0; p.cutLen=v.toFixed(2); UI.renderPartsTable(); window.calculate();} };
 window.toggleProcessing = (id) => { const chk=document.getElementById(`has_${id}`); state.activeProcessingChecks[id]=chk.checked; if(!chk.checked){state.activeProcessingAreas[id]=0; document.getElementById(`area_${id}`).value=0;} UI.renderProcessingSection(); window.calculate(); };
@@ -133,6 +133,20 @@ window.toggleUrgency = () => { const chk=document.getElementById('isUrgent').che
 window.openCatalog = () => { const list=document.getElementById('profilesList'); list.innerHTML=calculatorsDb.map(c=>`<div onclick="loadProfile('${c.id}')" class="p-3 mb-2 rounded-lg cursor-pointer transition flex items-center justify-between ${c.id===state.currentCalcId?'bg-orange-50 border border-orange-200':'bg-white border border-slate-100 hover:border-orange-200'}"><span class="font-bold text-slate-700 text-sm">${c.name}</span>${c.id===state.currentCalcId?'<i class="fas fa-check text-orange-600"></i>':''}</div>`).join(''); document.getElementById('catalogModal').classList.remove('hidden'); };
 window.closeCatalog = () => document.getElementById('catalogModal').classList.add('hidden');
 window.printReceipt = UI.printReceipt; window.openSettings = UI.openSettings; window.closeSettings = UI.closeSettings; window.closeConfirm = UI.closeConfirm; window.resetOrder = UI.resetOrder; window.saveData = () => {};
+window.copyKP = async () => {
+    const { totalMat, totalCut, totalFinish, totalExtras, salePrice } = calculateTotals();
+    const orderNumber = document.getElementById('clientOrder').value || '---';
+    const clientName = document.getElementById('clientName').value || 'Не указан';
+    const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
+    const text = `ПЕЧАТНЫЙ ДВОР\n\nЗаказ: №${orderNumber}\nКлиент: ${clientName}\n\nМатериалы: ${fmt(totalMat)} ₽\nРезка: ${fmt(totalCut)} ₽\nОбработка: ${fmt(totalFinish)} ₽\nДоп. услуги: ${fmt(totalExtras)} ₽\n\nИТОГО: ${fmt(salePrice)} ₽`;
+    try {
+        await navigator.clipboard.writeText(text);
+        UI.showToast("КП скопировано", "success");
+    } catch (error) {
+        console.error(error);
+        UI.showToast("Не удалось скопировать", "error");
+    }
+};
 
 window.loadProfile = (id) => {
     const name = state.loadProfile(id);

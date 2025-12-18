@@ -38,9 +38,10 @@
     </div>
 
     <div id="mobileAppRoot" class="mobile-only"></div>
+    <div id="mobileTotalBar" class="mobile-only"></div>
 
-    <div id="appContainer" class="max-w-[1440px] mx-auto no-print">
-        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+    <div id="appContainer" class="max-w-[1440px] mx-auto no-print desktop-only">
+        <header id="appHeader" class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
             <div class="flex items-center gap-4 w-full lg:w-auto">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg">
@@ -77,13 +78,13 @@
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
             <div class="xl:col-span-8 space-y-6">
                 <div class="card overflow-hidden">
-                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex justify-between items-center">
+                    <div id="materialsHeader" class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex justify-between items-center">
                         <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-white border border-slate-200 flex items-center justify-center text-xs text-slate-500">1</span> Детали
                         </h2>
                         <button onclick="clearParts()" class="btn-delete bg-transparent border-0 text-slate-400 hover:text-red-600 hover:bg-transparent normal-case font-normal text-xs underline">Удалить все</button>
                     </div>
-                    <div class="p-5 bg-white border-b border-slate-100">
+                    <div id="materialsFormBlock" class="p-5 bg-white border-b border-slate-100">
                         <div class="flex flex-col gap-5">
                             <div>
                                 <label class="label-micro">Материал</label>
@@ -100,17 +101,17 @@
                             <button onclick="addPart()" class="btn-primary bg-slate-900 w-full shadow-md hover:bg-slate-800">Добавить позицию</button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
+                    <div id="partsTableSection" class="overflow-x-auto max-h-[350px] overflow-y-auto">
                         <table class="w-full text-sm text-left"><tbody id="partsTableBody" class="divide-y divide-slate-100 bg-white"></tbody></table>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="card p-5"><h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 pb-2 border-b">2. Обработка</h2><div class="space-y-4" id="processingContainer"></div></div>
-                    <div class="card p-5"><h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 pb-2 border-b">3. Доп. Услуги</h2><div class="space-y-3" id="extrasContainer"></div></div>
+                    <div id="processingCard" class="card p-5"><h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 pb-2 border-b">2. Обработка</h2><div class="space-y-4" id="processingContainer"></div></div>
+                    <div id="extrasCard" class="card p-5"><h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4 pb-2 border-b">3. Доп. Услуги</h2><div class="space-y-3" id="extrasContainer"></div></div>
                 </div>
             </div>
             <div class="hidden xl:block xl:col-span-4">
-                <div class="card bg-slate-900 text-white p-6 sticky top-6 shadow-2xl border-slate-800">
+                <div id="summaryCard" class="card bg-slate-900 text-white p-6 sticky top-6 shadow-2xl border-slate-800">
                     <div class="flex items-center justify-between mb-6 border-b border-slate-700 pb-4"><h2 class="text-base font-bold uppercase tracking-wider text-slate-200">Итого</h2><i class="fas fa-calculator text-slate-600 text-xl"></i></div>
                     <div class="space-y-3 text-sm text-slate-300 mb-8 font-medium">
                         <div class="flex justify-between"><span>Материалы</span> <span id="resMat" class="text-white">0 ₽</span></div>

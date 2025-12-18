@@ -7,6 +7,7 @@ let mobileTrackEl = null;
 let touchStartX = 0;
 let touchStartY = 0;
 let touchActive = false;
+const originalPlacements = new Map();
 
 const modeMediaQuery = window.matchMedia('(max-width: 768px)');
 let uiModeInitialized = false;
@@ -72,6 +73,80 @@ function attachMobileSwipe(track) {
     });
 }
 
+function getMobileScreenEl(screenId) {
+    return mobileTrackEl?.querySelector(`[data-screen="${screenId}"]`);
+}
+
+function rememberPlacement(el) {
+    if (!originalPlacements.has(el)) {
+        originalPlacements.set(el, { parent: el.parentNode, nextSibling: el.nextSibling });
+    }
+}
+
+function moveToMobileScreen(selector, screenId) {
+    const el = document.querySelector(selector);
+    const screen = getMobileScreenEl(screenId);
+    if (!el || !screen) return;
+    rememberPlacement(el);
+    screen.appendChild(el);
+}
+
+function mapMobileContent() {
+    if (uiMode !== 'mobile' || !mobileTrackEl) return;
+    moveToMobileScreen('#appHeader', 'materials');
+    moveToMobileScreen('#materialsHeader', 'materials');
+    moveToMobileScreen('#materialsFormBlock', 'materials');
+    moveToMobileScreen('#partsTableSection', 'details');
+    moveToMobileScreen('#processingCard', 'processing');
+    moveToMobileScreen('#extrasCard', 'extras');
+    moveToMobileScreen('#summaryCard', 'summary');
+}
+
+function restoreDesktopLayout() {
+    originalPlacements.forEach((loc, el) => {
+        if (!loc.parent) return;
+        if (loc.nextSibling && loc.nextSibling.parentNode === loc.parent) {
+            loc.parent.insertBefore(el, loc.nextSibling);
+        } else {
+            loc.parent.appendChild(el);
+        }
+    });
+}
+
+function ensureMobileTotalBar() {
+    const bar = document.getElementById('mobileTotalBar');
+    if (!bar) return;
+    bar.className = 'mobile-total-bar mobile-only';
+    bar.innerHTML = `
+        <div class="mobile-total-info">
+            <div class="mobile-total-label">Итого</div>
+            <div id="mobileTotalPrice" class="mobile-total-value">0 ₽</div>
+        </div>
+        <div class="mobile-total-actions">
+            <button id="mobileToSummary" class="mobile-total-btn">К итогу</button>
+            <button id="mobileCopyKP" class="mobile-total-btn primary">Скопировать КП</button>
+        </div>
+    `;
+
+    const toSummaryBtn = bar.querySelector('#mobileToSummary');
+    const copyBtn = bar.querySelector('#mobileCopyKP');
+
+    if (toSummaryBtn) {
+        toSummaryBtn.addEventListener('click', () => {
+            const targetIndex = mobileScreens.indexOf('summary');
+            goToMobileScreen(targetIndex);
+        });
+    }
+
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            if (typeof window.copyKP === 'function') {
+                window.copyKP();
+            }
+        });
+    }
+}
+
 export function initMobileUI() {
     if (uiMode !== 'mobile') return;
     const root = document.getElementById('mobileAppRoot');
@@ -89,10 +164,13 @@ export function initMobileUI() {
     root.appendChild(track);
     mobileTrackEl = track;
     attachMobileSwipe(track);
+    mapMobileContent();
+    ensureMobileTotalBar();
     goToMobileScreen(currentMobileScreenIndex);
 }
 
 export function initDesktopUI() {
+    restoreDesktopLayout();
     const root = document.getElementById('mobileAppRoot');
     if (root) root.innerHTML = '';
     mobileTrackEl = null;
