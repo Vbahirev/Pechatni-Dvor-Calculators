@@ -155,6 +155,18 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin
     .mobile-only { display: block; }
 }
 
+.mobile-screens-track {
+    display: flex;
+    height: 100vh;
+    will-change: transform;
+}
+
+.mobile-screen {
+    min-width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+}
+
 /* Print */
 @media print {
     .no-print { display: none !important; }

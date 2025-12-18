@@ -3,6 +3,10 @@ import { state } from './state.js';
 export const mobileScreens = ['materials', 'details', 'processing', 'extras', 'summary'];
 export let currentMobileScreenIndex = 0;
 export let uiMode = 'desktop';
+let mobileTrackEl = null;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchActive = false;
 
 const modeMediaQuery = window.matchMedia('(max-width: 768px)');
 let uiModeInitialized = false;
@@ -30,11 +34,76 @@ export function initUI() {
     }
 }
 
-export function initMobileUI() {}
-export function initDesktopUI() {}
+function attachMobileSwipe(track) {
+    track.addEventListener('touchstart', (e) => {
+        if (uiMode !== 'mobile') return;
+        if (e.touches.length !== 1) { touchActive = false; return; }
+        const t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchActive = true;
+    }, { passive: true });
+
+    track.addEventListener('touchmove', (e) => {
+        if (!touchActive || uiMode !== 'mobile') return;
+        if (e.touches.length !== 1) { touchActive = false; return; }
+        const t = e.touches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        if (Math.abs(dy) > Math.abs(dx)) {
+            touchActive = false;
+        }
+    }, { passive: true });
+
+    track.addEventListener('touchend', (e) => {
+        if (!touchActive || uiMode !== 'mobile') return;
+        if (e.changedTouches.length === 0) { touchActive = false; return; }
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        touchActive = false;
+        if (Math.abs(dy) > Math.abs(dx)) return;
+        if (Math.abs(dx) < 40) return;
+        if (dx < 0) {
+            goToMobileScreen(currentMobileScreenIndex + 1);
+        } else {
+            goToMobileScreen(currentMobileScreenIndex - 1);
+        }
+    });
+}
+
+export function initMobileUI() {
+    if (uiMode !== 'mobile') return;
+    const root = document.getElementById('mobileAppRoot');
+    if (!root) return;
+    root.innerHTML = '';
+    const track = document.createElement('div');
+    track.className = 'mobile-screens-track';
+    track.style.width = `${mobileScreens.length * 100}vw`;
+    mobileScreens.forEach(screenId => {
+        const screen = document.createElement('div');
+        screen.className = 'mobile-screen';
+        screen.dataset.screen = screenId;
+        track.appendChild(screen);
+    });
+    root.appendChild(track);
+    mobileTrackEl = track;
+    attachMobileSwipe(track);
+    goToMobileScreen(currentMobileScreenIndex);
+}
+
+export function initDesktopUI() {
+    const root = document.getElementById('mobileAppRoot');
+    if (root) root.innerHTML = '';
+    mobileTrackEl = null;
+}
 export function goToMobileScreen(index) {
-    if (index < 0 || index >= mobileScreens.length) return;
-    currentMobileScreenIndex = index;
+    if (uiMode !== 'mobile') return;
+    const clampedIndex = Math.min(Math.max(index, 0), mobileScreens.length - 1);
+    currentMobileScreenIndex = clampedIndex;
+    if (mobileTrackEl) {
+        mobileTrackEl.style.transform = `translateX(-${clampedIndex * 100}vw)`;
+    }
 }
 
 // Тосты и Модалки
