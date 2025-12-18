@@ -1,5 +1,42 @@
 import { state } from './state.js';
 
+export const mobileScreens = ['materials', 'details', 'processing', 'extras', 'summary'];
+export let currentMobileScreenIndex = 0;
+export let uiMode = 'desktop';
+
+const modeMediaQuery = window.matchMedia('(max-width: 768px)');
+let uiModeInitialized = false;
+
+export function detectUIMode() {
+    uiMode = modeMediaQuery.matches ? 'mobile' : 'desktop';
+    window.uiMode = uiMode;
+    return uiMode;
+}
+
+function handleModeChange() {
+    const mode = detectUIMode();
+    if (mode === 'mobile') {
+        initMobileUI();
+    } else {
+        initDesktopUI();
+    }
+}
+
+export function initUI() {
+    handleModeChange();
+    if (!uiModeInitialized) {
+        modeMediaQuery.addEventListener('change', handleModeChange);
+        uiModeInitialized = true;
+    }
+}
+
+export function initMobileUI() {}
+export function initDesktopUI() {}
+export function goToMobileScreen(index) {
+    if (index < 0 || index >= mobileScreens.length) return;
+    currentMobileScreenIndex = index;
+}
+
 // Тосты и Модалки
 export function showToast(m,t='error'){const c=document.getElementById('toast-container');const e=document.createElement('div');const i=t==='success'?'<i class="fas fa-check-circle text-green-500 text-xl"></i>':(t==='info'?'<i class="fas fa-info-circle text-blue-500 text-xl"></i>':'<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>');e.className=`toast ${t}`;e.innerHTML=`${i} <span class="font-medium text-slate-700 text-sm">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.animation='fadeOut 0.3s forwards';setTimeout(()=>e.remove(),300)},3000);}
 let confirmCallback=null;export function showConfirm(m,c){const md=document.getElementById('confirmModal');const ct=document.getElementById('confirmContent');document.getElementById('confirmMessage').innerText=m;confirmCallback=c;md.classList.remove('hidden');setTimeout(()=>{md.classList.remove('opacity-0');ct.classList.remove('scale-95')},10);const b=document.getElementById('confirmBtnYes');const nb=b.cloneNode(true);b.parentNode.replaceChild(nb,b);nb.addEventListener('click',()=>closeConfirm(true));}
