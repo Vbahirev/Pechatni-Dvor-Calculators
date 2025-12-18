@@ -144,6 +144,7 @@ window.loadProfile = (id) => {
 };
 
 async function init() {
+    UI.initUI();
     UI.showToast("Синхронизация...", "info");
     const freshData = await fetchGoogleData();
     if (freshData) {

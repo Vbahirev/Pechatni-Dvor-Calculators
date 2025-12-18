@@ -147,6 +147,14 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin
     to { opacity: 0; transform: translateY(-10px); }
 }
 
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+
+@media (max-width: 768px) {
+    .desktop-only { display: none !important; }
+    .mobile-only { display: block; }
+}
+
 /* Print */
 @media print {
     .no-print { display: none !important; }
