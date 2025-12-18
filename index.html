@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonoCalc System v9.9</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Анимация удаления слоя */
+        .removing {
+            animation: removeAnim 0.3s ease-in forwards;
+            overflow: hidden;
+        }
+        @keyframes removeAnim {
+            0% { opacity: 1; transform: scale(1); max-height: 500px; margin-bottom: 1rem; }
+            50% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 0; transform: scale(0.9); max-height: 0; margin-bottom: 0; padding: 0; border: none; }
+        }
+
+        .type-checkbox { @apply w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer; }
+        .stock-checkbox { @apply w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer; }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex justify-center min-h-screen text-sm">
+
+    <div class="w-full max-w-6xl container">
+        <header class="flex flex-col md:flex-row justify-between items-end mb-8 pb-4 border-b border-gray-200">
+            <div class="w-full md:w-auto">
+                <div class="flex items-center gap-3 mb-1">
+                    <h1 class="text-2xl font-black tracking-tight text-gray-900">MonoCalc v9.9</h1>
+                    <span class="bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-widest no-print">Pro Edition</span>
+                </div>
+                <p class="text-xs text-gray-400 font-medium no-print">Commercial Pricing System</p>
+                <div class="print-only hidden text-xl font-bold mt-2">БЛАНК ЗАКАЗА</div>
+            </div>
+            
+            <div class="flex items-center gap-2 mt-4 md:mt-0 no-print">
+                <button onclick="openProjectInfo()" class="p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-gray-600" title="Данные проекта">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button onclick="openSettings()" class="p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-gray-600" title="Настройки цен">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <button id="urgencyToggle" onclick="toggleUrgency()" class="px-4 py-2.5 rounded-lg border border-gray-300 text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-900 bg-white transition-colors">
+                    Срочно: Вчера
+                </button>
+            </div>
+        </header>
+
+        <div class="hidden print-only mb-6 border-b border-dashed pb-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-xs text-gray-500 uppercase">Проект:</span>
+                    <div class="text-lg font-bold" id="printProjectName">Без названия</div>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-500 uppercase">Заказчик:</span>
+                    <div class="text-lg font-bold" id="printClientName">Частное лицо</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-nav bg-gray-200/60 p-1.5 rounded-xl flex mb-8 max-w-sm no-print">
+            <button id="tabLayers" onclick="switchTab('layers')" class="tab-btn active flex-1 py-2 text-[11px] uppercase tracking-wide font-bold">1. Конструктив</button>
+            <button id="tabWorks" onclick="switchTab('works')" class="tab-btn flex-1 py-2 text-[11px] uppercase tracking-wide font-bold">2. Работы</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+                <div id="sectionLayers">
+                    <div class="flex justify-between items-center mb-4 no-print">
+                        <h2 class="text-base font-bold text-gray-800">Спецификация</h2>
+                        <button onclick="addLayer()" class="text-[10px] font-bold bg-gray-900 text-white border border-gray-900 px-3 py-1.5 rounded hover:bg-black uppercase tracking-wide flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M12 5v14M5 12h14"/></svg> Слой
+                        </button>
+                    </div>
+                    <div id="layersList" class="space-y-4"></div>
+                </div>
+
+                <div id="sectionWorks" class="hidden space-y-8">
+                    <div>
+                        <div class="flex justify-between items-center mb-4 no-print">
+                             <h2 class="text-base font-bold text-gray-800">Дополнительные услуги</h2>
+                             <button onclick="addService()" class="text-[10px] font-bold bg-gray-900 text-white border border-gray-900 px-3 py-1.5 rounded hover:bg-black uppercase tracking-wide flex items-center gap-1">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M12 5v14M5 12h14"/></svg> Услуга
+                            </button>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-200 overflow-visible shadow-sm">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b border-gray-100">
+                                    <tr class="text-[10px] text-gray-400 uppercase">
+                                        <th class="py-3 pl-4 font-bold">Наименование</th>
+                                        <th class="py-3 px-2 w-32 text-center font-bold">Тип</th>
+                                        <th class="py-3 px-2 w-32 text-center font-bold">Значение/Кол-во</th>
+                                        <th class="py-3 pr-4 w-24 text-right font-bold">Сумма</th>
+                                        <th class="py-3 w-8 no-print"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="servicesList"></tbody>
+                            </table>
+                            <div id="emptyServicesMsg" class="p-8 text-center text-gray-400 text-xs hidden">Нет добавленных услуг</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-4 no-print">
+                             <h2 class="text-base font-bold text-gray-800">Товары и Фурнитура</h2>
+                             <button onclick="addGoodsItem()" class="text-[10px] font-bold bg-gray-900 text-white border border-gray-900 px-3 py-1.5 rounded hover:bg-black uppercase tracking-wide flex items-center gap-1">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M12 5v14M5 12h14"/></svg> Товар
+                            </button>
+                        </div>
+                        <div class="bg-white rounded-xl border border-gray-200 overflow-visible shadow-sm">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b border-gray-100">
+                                    <tr class="text-[10px] text-gray-400 uppercase">
+                                        <th class="py-3 pl-4 font-bold">Наименование товара</th>
+                                        <th class="py-3 px-2 w-32 text-center font-bold">Кол-во</th>
+                                        <th class="py-3 px-2 w-32 text-center font-bold">Цена/шт</th>
+                                        <th class="py-3 pr-4 w-24 text-right font-bold">Сумма</th>
+                                        <th class="py-3 w-8 no-print"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="goodsList"></tbody>
+                            </table>
+                            <div id="emptyGoodsMsg" class="p-8 text-center text-gray-400 text-xs hidden">Нет добавленных товаров</div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-yellow-50 rounded-xl border border-yellow-100 text-[11px] text-yellow-800 flex gap-2 items-start">
+                        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Процентные наценки услуг считаются от стоимости производства (Материалы + Резка + Гравировка). Стоимость товаров в базу процента не входит.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div class="pro-card p-6 sticky top-6 bg-white border-t-4 border-t-gray-900">
+                    <h2 class="text-base font-bold mb-5 uppercase tracking-wide">Расчет</h2>
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between text-xs pb-2 border-b border-gray-50"><span class="text-gray-500">Материалы + Рез</span><span id="resLayers" class="font-bold">0 ₽</span></div>
+                        <div class="flex justify-between text-xs pb-2 border-b border-gray-50"><span class="text-gray-500">Покрытия и Гравировка</span><span id="resFinishing" class="font-bold">0 ₽</span></div>
+                        <div class="flex justify-between text-xs pb-2 border-b border-gray-50"><span class="text-gray-500">Работы и Услуги</span><span id="resWorks" class="font-bold">0 ₽</span></div>
+                         <div class="flex justify-between text-xs pb-2 border-b border-gray-50"><span class="text-gray-500">Фурнитура</span><span id="resGoods" class="font-bold">0 ₽</span></div>
+                        <div id="urgencyRow" class="hidden flex justify-between text-xs text-red-600 font-bold pb-2"><span class="uppercase">Наценка 50%</span><span id="resUrgency">+ 0 ₽</span></div>
+                    </div>
+                    <div class="mb-6">
+                        <label class="label-xs mb-2 block">Скидка (₽)</label>
+                        <div class="stepper-group border-dashed border-gray-300">
+                            <input type="number" id="discount" min="0" value="0" oninput="updateCalc()" class="stepper-input text-gray-500 font-medium" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="mb-6 pt-4 border-t border-gray-100">
+                        <span class="label-xs mb-1 block">Итого к оплате</span>
+                        <div class="text-3xl font-black text-gray-900 tracking-tighter" id="totalPrice">0 ₽</div>
+                    </div>
+                    <button onclick="copyQuote()" class="btn-primary w-full py-3.5 text-xs font-bold uppercase tracking-widest mb-2 no-print">Копировать КП</button>
+                    <button onclick="window.print()" class="w-full py-2.5 bg-gray-100 rounded-lg text-[10px] font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-200 transition mb-2 no-print">Печать бланка</button>
+                    <button onclick="resetAll()" class="w-full py-2 text-[10px] font-bold text-gray-300 hover:text-red-500 transition no-print">Очистить</button>
+                    <div id="copyAlert" class="hidden absolute inset-0 bg-white/95 flex items-center justify-center rounded-xl z-20"><span class="text-[10px] font-bold uppercase tracking-widest">Скопировано!</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="projectModal" onclick="if(event.target === this) closeProjectInfo()" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4 no-print">
+        <div class="bg-white w-full max-w-md modal-content custom-scroll">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="font-bold text-lg">Данные проекта</h3>
+                <button onclick="closeProjectInfo()" class="text-gray-400 hover:text-black">✕</button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="label-xs mb-2 text-gray-600">Название проекта</label>
+                    <div class="stepper-group px-3 py-1 bg-white border-gray-300">
+                        <input type="text" id="projectName" placeholder="Введите название..." class="w-full py-2 bg-transparent outline-none font-bold text-gray-900 text-left" oninput="saveToLocal()">
+                    </div>
+                </div>
+                <div>
+                    <label class="label-xs mb-2 text-gray-600">Заказчик (ФИО / Компания)</label>
+                    <div class="stepper-group px-3 py-1 bg-white border-gray-300">
+                        <input type="text" id="clientName" placeholder="Введите имя..." class="w-full py-2 bg-transparent outline-none font-bold text-gray-900 text-left" oninput="saveToLocal()">
+                    </div>
+                </div>
+                <button onclick="closeProjectInfo()" class="w-full py-3 bg-gray-900 text-white text-xs font-bold rounded-xl mt-4">Готово</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteConfirmModal" onclick="if(event.target === this) closeDeleteConfirm()" class="fixed inset-0 modal-overlay hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center transform scale-100 transition-transform modal-content">
+            <h3 class="font-bold text-lg mb-2" id="deleteModalTitle">Удаление элемента</h3>
+            <p class="text-sm text-gray-500 mb-6">Вы действительно хотите удалить этот пункт? Это действие нельзя отменить.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteConfirm()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-200 transition">Отмена</button>
+                <button id="deleteActionBtn" onclick="performDelete()" class="flex-1 py-2.5 bg-red-500 text-white text-xs font-bold rounded-xl hover:bg-red-600 transition shadow-lg shadow-red-200">Удалить</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="resetConfirmModal" onclick="if(event.target === this) closeResetConfirm()" class="fixed inset-0 modal-overlay hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center transform scale-100 transition-transform modal-content">
+            <h3 class="font-bold text-lg mb-2">Очистка данных</h3>
+            <p class="text-sm text-gray-500 mb-6">Вы действительно хотите очистить все данные проекта? Восстановить их будет невозможно.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeResetConfirm()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-200 transition">Отмена</button>
+                <button onclick="performReset()" class="flex-1 py-2.5 bg-red-500 text-white text-xs font-bold rounded-xl hover:bg-red-600 transition shadow-lg shadow-red-200">Очистить всё</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" onclick="if(event.target === this) closeSettings()" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4 no-print">
+        <div class="bg-white w-full max-w-4xl modal-content custom-scroll h-[85vh] flex flex-col">
+            
+            <div class="px-6 pt-6 pb-2 border-b border-gray-100 sticky top-0 bg-white z-20">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-xl tracking-tight">Настройки</h3>
+                    <button onclick="closeSettings()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition">✕</button>
+                </div>
+                <div class="tab-nav bg-gray-200/60 p-1.5 rounded-xl flex overflow-x-auto">
+                    <button onclick="switchSettingsTab('materials')" id="stab-materials" class="tab-btn active flex-1 py-2 text-[11px] uppercase tracking-wide font-bold whitespace-nowrap px-4">Материалы</button>
+                    <button onclick="switchSettingsTab('coatings')" id="stab-coatings" class="tab-btn flex-1 py-2 text-[11px] uppercase tracking-wide font-bold whitespace-nowrap px-4">Покрытия</button>
+                    <button onclick="switchSettingsTab('hardware')" id="stab-hardware" class="tab-btn flex-1 py-2 text-[11px] uppercase tracking-wide font-bold whitespace-nowrap px-4">Фурнитура</button>
+                    <button onclick="switchSettingsTab('services')" id="stab-services" class="tab-btn flex-1 py-2 text-[11px] uppercase tracking-wide font-bold whitespace-nowrap px-4">База услуг</button>
+                </div>
+            </div>
+
+            <div class="p-6 flex-1 overflow-y-auto custom-scroll">
+                
+                <div id="scontent-materials">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <label class="label-xs mb-2">Коэффициент отходов</label>
+                            <div class="flex items-center gap-3">
+                                <input type="range" id="wastageInput" min="1" max="2" step="0.05" oninput="wastageVal.innerText = this.value" class="w-full accent-gray-800">
+                                <span id="wastageVal" class="font-bold w-12 text-center text-sm">1.25</span>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2 leading-tight">Множитель стоимости материалов. 1.25 означает +25% к цене листа (на обрезки и брак).</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                             <label class="label-xs mb-2">Стоимость лазера (мин)</label>
+                             <div class="stepper-group bg-white">
+                                 <input type="number" id="laserCostInput" min="0" oninput="renderMaterialsSettings()" class="stepper-input font-bold" value="40">
+                                 <span class="pr-4 text-xs font-bold text-gray-400">₽</span>
+                             </div>
+                             <p class="text-[10px] text-gray-400 mt-2 leading-tight">Цена за 1 минуту работы станка. Влияет на стоимость реза (Длина реза / Скорость).</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h4 class="font-bold text-sm">База материалов</h4>
+                             <button onclick="addNewMaterial()" class="text-[10px] bg-gray-900 text-white px-3 py-1.5 rounded font-bold uppercase hover:bg-black transition shadow-lg">+ Добавить</button>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50">
+                                    <tr class="text-[10px] text-gray-400 uppercase border-b border-gray-200">
+                                        <th class="py-3 w-10"></th> <th class="py-3 pl-2 w-10">Вкл</th>
+                                        <th class="py-3 font-bold pl-2">Название</th>
+                                        <th class="py-3 font-bold text-center">Лист (мм)</th>
+                                        <th class="py-3 font-bold text-center">Цена (₽)</th>
+                                        <th class="py-3 font-bold text-center">Скорость</th>
+                                        <th class="py-3 w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="materialsSettingsList" class="text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="scontent-coatings" class="hidden">
+                    <div class="mb-8">
+                         <div class="p-4 bg-gray-50 rounded-xl max-w-md">
+                            <label class="label-xs mb-2">Гравировка (см²)</label>
+                            <div class="stepper-group bg-white">
+                                <input type="number" id="engravingPriceInput" min="0" class="stepper-input font-bold" value="5">
+                                <span class="pr-4 text-xs font-bold text-gray-400">₽</span>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2">Цена за квадратный сантиметр нанесения.</p>
+                       </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h4 class="font-bold text-sm">Виды покрытий</h4>
+                             <button onclick="addNewCoating()" class="text-[10px] bg-gray-900 text-white px-3 py-1.5 rounded font-bold uppercase hover:bg-black transition shadow-lg">+ Добавить</button>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50">
+                                    <tr class="text-[10px] text-gray-400 uppercase border-b border-gray-200">
+                                        <th class="py-3 w-10"></th> <th class="py-3 pl-2 w-10">Вкл</th>
+                                        <th class="py-3 font-bold pl-2">Название покрытия</th>
+                                        <th class="py-3 font-bold text-center">Цена (₽/м²)</th>
+                                        <th class="py-3 font-bold text-center w-16" title="Акрил/Пластик">Aкрил</th>
+                                        <th class="py-3 font-bold text-center w-16" title="Дерево/Фанера">Дерево</th>
+                                        <th class="py-3 w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="coatingsSettingsList" class="text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="scontent-hardware" class="hidden">
+                     <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h4 class="font-bold text-sm">Склад фурнитуры</h4>
+                             <button onclick="addNewHardware()" class="text-[10px] bg-gray-900 text-white px-3 py-1.5 rounded font-bold uppercase hover:bg-black transition shadow-lg">+ Добавить</button>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50">
+                                    <tr class="text-[10px] text-gray-400 uppercase border-b border-gray-200">
+                                        <th class="py-3 w-10"></th> <th class="py-3 pl-2 w-10">Вкл</th>
+                                        <th class="py-3 font-bold pl-2">Наименование</th>
+                                        <th class="py-3 font-bold text-center">Цена за шт (₽)</th>
+                                        <th class="py-3 w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hardwareSettingsList" class="text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="scontent-services" class="hidden">
+                     <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h4 class="font-bold text-sm">База услуг и доп. работ</h4>
+                             <button onclick="addNewServiceInSettings()" class="text-[10px] bg-gray-900 text-white px-3 py-1.5 rounded font-bold uppercase hover:bg-black transition shadow-lg">+ Добавить</button>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50">
+                                    <tr class="text-[10px] text-gray-400 uppercase border-b border-gray-200">
+                                        <th class="py-3 w-10"></th> <th class="py-3 pl-2 w-10">Вкл</th>
+                                        <th class="py-3 font-bold pl-2">Название услуги</th>
+                                        <th class="py-3 font-bold text-center w-24">Тип</th>
+                                        <th class="py-3 font-bold text-center w-24">Значение</th>
+                                        <th class="py-3 w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="servicesSettingsList" class="text-xs"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-4">Эти услуги будут доступны для выбора в выпадающем списке основного калькулятора.</p>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="p-6 border-t border-gray-100 bg-white">
+                <button onclick="saveSettings()" class="w-full py-3.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition shadow-xl transform hover:-translate-y-0.5">Сохранить настройки</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

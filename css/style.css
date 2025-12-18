@@ -1,0 +1,157 @@
+:root {
+    --bg-body: #F4F4F5; --bg-card: #FFFFFF;
+    --text-main: #18181B; --text-sub: #71717A;
+    --accent: #27272A; --border: #E4E4E7;
+}
+body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+/* Utils */
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+.pro-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s; }
+.pro-card:hover { border-color: #D4D4D8; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+.stepper-group { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 10px; background: #FAFAFA; overflow: hidden; height: 38px; }
+.stepper-group:focus-within { border-color: #A1A1AA; background: #FFF; }
+.stepper-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 100%; color: var(--text-sub); cursor: pointer; user-select: none; font-weight: 600; transition: background 0.2s; }
+.stepper-btn:hover { background: #E4E4E7; color: var(--text-main); }
+.stepper-input { width: 100%; height: 100%; text-align: center; background: transparent; border: none; outline: none; font-weight: 600; font-size: 13px; padding: 0; color: #18181B; }
+
+.tab-btn { color: var(--text-sub); border-radius: 8px; transition: all 0.2s; }
+.tab-btn.active { background: #FFFFFF; color: var(--text-main); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700; }
+
+.btn-primary { background: var(--accent); color: white; border-radius: 12px; transition: all 0.2s; }
+.btn-primary:hover { background: #000; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(1px); }
+
+/* --- Плавная анимация слоев --- */
+.part-row { 
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 500px; 
+    margin-bottom: 0.75rem; 
+    padding: 1.25rem; 
+    overflow: visible; 
+    transform-origin: top center;
+}
+
+.part-row.adding {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    overflow: hidden; 
+}
+
+/* Modal Overlay */
+.modal-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
+
+/* --- GLASS SCROLLBAR (Стекло) --- */
+.custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.1) transparent; }
+.custom-scroll::-webkit-scrollbar { width: 14px; background: transparent; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; margin-block: 6px; }
+.custom-scroll::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.12); border: 4px solid transparent; border-radius: 99px; background-clip: content-box; transition: background-color 0.2s; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(0, 0, 0, 0.3); }
+
+/* Модальное окно */
+.modal-content { max-height: 85vh; overflow-y: auto; border-radius: 24px !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+
+/* --- Settings Table & Drag'n'Drop --- */
+/* ТИМЛИД: Фиксированная высота строк для устранения прыжков */
+#materialsSettingsList tr, 
+#coatingsSettingsList tr, 
+#hardwareSettingsList tr, 
+#servicesSettingsList tr { 
+    border-bottom: 1px solid #f3f4f6; 
+    transition: transform 0.2s ease, background-color 0.2s; /* Плавное перемещение */
+    height: 54px; /* Фиксированная высота строки */
+}
+#materialsSettingsList tr:last-child, #coatingsSettingsList tr:last-child, #hardwareSettingsList tr:last-child, #servicesSettingsList tr:last-child { border-bottom: none; }
+#materialsSettingsList tr:hover, #coatingsSettingsList tr:hover, #hardwareSettingsList tr:hover, #servicesSettingsList tr:hover { background-color: #fafafa; }
+#materialsSettingsList td, #coatingsSettingsList td, #hardwareSettingsList td, #servicesSettingsList td { vertical-align: middle; padding: 0 4px; }
+
+/* Унифицированные инпуты в настройках */
+.settings-input { 
+    font-size: 12px; 
+    font-weight: 600; 
+    color: #18181B; 
+    background: transparent; 
+    border: 1px solid transparent; 
+    border-radius: 8px; 
+    padding: 0 8px; 
+    width: 100%; 
+    height: 36px; /* Фиксированная высота инпута */
+    line-height: 36px;
+    text-align: center;
+    transition: all 0.2s;
+}
+.settings-input:hover, .settings-input:focus { background-color: #ffffff; border-color: #E4E4E7; box-shadow: 0 1px 2px rgba(0,0,0,0.05); outline: none; }
+.settings-input.text-left { text-align: left; }
+.settings-input.border-dashed { border-bottom: 1px dashed #D1D5DB; border-radius: 0; padding-left: 0; }
+.settings-input.border-dashed:focus { border-bottom-style: solid; border-color: #000; }
+
+/* Анимация подсветки новой строки */
+@keyframes highlight-pulse {
+    0% { background-color: rgba(253, 224, 71, 0.4); }
+    100% { background-color: transparent; }
+}
+.highlight-row { animation: highlight-pulse 2s ease-out forwards; }
+
+/* Улучшенный Drag & Drop */
+.drag-handle { 
+    cursor: grab; 
+    color: #D4D4D8; 
+    transition: all 0.2s;
+}
+.draggable-row:hover .drag-handle { color: #52525B; }
+.drag-handle:active { cursor: grabbing; color: #000; }
+
+.draggable-row.dragging { 
+    opacity: 0.5;
+    background: #F3F4F6;
+    border: 1px dashed #9CA3AF;
+    transform: scale(0.99);
+}
+
+.out-of-stock { opacity: 0.5; filter: grayscale(1); }
+.stock-checkbox { width: 18px; height: 18px; accent-color: #18181B; cursor: pointer; border-radius: 4px; display: block; margin: 0 auto; }
+
+/* --- CUSTOM SELECT --- */
+.custom-select { position: relative; width: 100%; font-size: 13px; font-weight: 500; user-select: none; }
+.select-trigger { display: flex; justify-content: space-between; align-items: center; background: #FAFAFA; border: 1px solid var(--border); border-radius: 10px; padding: 0 12px; height: 38px; cursor: pointer; transition: all 0.2s; width: 100%; color: var(--text-main); font-weight: 600; }
+.select-trigger:hover { background: #FFF; border-color: #A1A1AA; }
+.select-arrow { transition: transform 0.2s ease; opacity: 0.5; }
+.custom-select.open .select-trigger { background: #FFF; border-color: #18181B; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.custom-select.open .select-arrow { transform: rotate(180deg); opacity: 1; }
+.select-options { position: absolute; top: 100%; left: 0; right: 0; background: #FFF; border: 1px solid #18181B; border-top: none; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 100; max-height: 250px; overflow-y: auto; opacity: 0; visibility: hidden; transform: translateY(-5px); transition: all 0.15s ease; }
+.custom-select.open .select-options { opacity: 1; visibility: visible; transform: translateY(0); }
+.custom-option { padding: 10px 12px; cursor: pointer; transition: background 0.1s; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f4f4f5; }
+.custom-option:last-child { border-bottom: none; }
+.custom-option:hover { background-color: #F4F4F5; }
+.custom-option.selected { background-color: #F4F4F5; color: #000; font-weight: 700; }
+.custom-option .sub-text { font-size: 10px; color: #9CA3AF; font-weight: normal; margin-left: 8px; }
+
+/* Custom Scroll for Selects */
+.select-options::-webkit-scrollbar { width: 10px; }
+.select-options::-webkit-scrollbar-track { background: transparent; margin-block: 5px; }
+.select-options::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.12); border: 3px solid transparent; border-radius: 20px; background-clip: content-box; }
+.select-options::-webkit-scrollbar-thumb:hover { background-color: rgba(0, 0, 0, 0.3); }
+
+@media print {
+    body { background: white; padding: 0; }
+    .no-print, header button, .tab-btn, .stepper-btn, .btn-primary, button { display: none !important; }
+    .print-only { display: block !important; }
+    .pro-card { border: none; box-shadow: none; padding: 0; margin-bottom: 20px; }
+    .part-row { page-break-inside: avoid; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+    input, select { border: none; background: transparent; font-weight: bold; padding: 0; -webkit-appearance: none; }
+    .stepper-group { border: none; background: transparent; }
+    .stepper-input { text-align: left; padding: 0; }
+    #sectionLayers, #sectionWorks { display: block !important; }
+    .select-trigger { border: none; padding: 0; background: transparent; height: auto; }
+    .select-arrow { display: none; }
+}
